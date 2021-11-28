@@ -3,14 +3,10 @@
         <file>frag.fsh</file>
         <file>vert.vsh</file>
         <file>simulation.fsh</file>
+        <file>interaction.fsh</file>
+        <file>normals.fsh</file>
     </qresource>
-    <qresource prefix="/textures"/>
     <qresource prefix="/">
-        <file>textures/Ground_Wet_Pebbles_001_ambientOcclusion.jpg</file>
-        <file>textures/Ground_Wet_Pebbles_001_basecolor.jpg</file>
-        <file>textures/Ground_Wet_Pebbles_001_height.png</file>
-        <file>textures/Ground_Wet_Pebbles_001_normal.jpg</file>
-        <file>textures/Ground_Wet_Pebbles_001_roughness.jpg</file>
         <file>textures/QT.png</file>
         <file>textures/brush.png</file>
         <file>textures/environment_map.png</file>

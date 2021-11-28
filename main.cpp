@@ -10,6 +10,8 @@ int main(int argc, char *argv[])
 
     QSurfaceFormat format;
 
+    app.setApplicationName("Water Simulation");
+
     if (QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGL) {
         qDebug("Requesting 4.6 OpenGL core context");
         format.setVersion(4, 6);
@@ -22,8 +24,8 @@ int main(int argc, char *argv[])
     QSurfaceFormat::setDefaultFormat(format);
 
     GLWindow glWindow;
-    glWindow.setMinimumSize(QSize(512, 512));
-    glWindow.setMaximumSize(QSize(512, 512));
+    glWindow.setMinimumSize(QSize(768, 768));
+    glWindow.setMaximumSize(QSize(768, 768));
     glWindow.show();
 
     return app.exec();

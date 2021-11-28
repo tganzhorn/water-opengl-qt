@@ -26,12 +26,14 @@ public:
 private:
     QOpenGLShaderProgram *m_renderProgram = nullptr;
     QOpenGLShaderProgram *m_simulationProgram = nullptr;
+    QOpenGLShaderProgram *m_interactionProgram = nullptr;
+    QOpenGLShaderProgram *m_normalsProgram = nullptr;
     QOpenGLBuffer *m_vbo = nullptr;
     QOpenGLVertexArrayObject *m_vao = nullptr;
-    QOpenGLFramebufferObject *m_fbo = nullptr;
+    QOpenGLFramebufferObject *m_fboSimulation = nullptr;
+    QOpenGLFramebufferObject *m_fboNormals = nullptr;
     QOpenGLTexture *m_textureBaseColor = nullptr;
     QOpenGLTexture *m_textureEnvironmentMap = nullptr;
-    bool m_firstTime = true;
     QOpenGLPaintDevice *m_openGlPaintDevice = nullptr;
 
     float m_quad[18] = {
