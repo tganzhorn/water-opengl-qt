@@ -11,10 +11,10 @@ layout (location = 3) uniform sampler2D normalsTexture;
 uniform vec3 uTexelSize;
 
 // Refraction calculation using plane ray intersection
-vec3 refraction(in vec3 normal, in vec3 p0, in vec3 pn)
+vec3 refraction(in vec3 normal, in vec3 p0, in vec3 pn, in float h0)
 {
     // RED light
-    vec3 r0 = vec3(vUV, 0.0f); // Ray origin
+    vec3 r0 = vec3(vUV, h0); // Ray origin
     vec3 rd = refract(normal, vec3(0, 0, -1), 0.5);
 
     float t = -dot(r0 - p0, pn) / dot(rd, pn);
@@ -41,11 +41,12 @@ void main(void)
 {       
     vec3 normal = texture2D(normalsTexture, vUV).xyz;
     vec3 lightPos = normalize(vec3(0.5, 0.5, 1) - vec3(vUV, 0));
+    float h0 = normal.z * 0.5;
 
     vec3 p0 = vec3(0, 0, -0.1f);
     vec3 pn = vec3(0, 0, 1);
 
-    vec3 refractionColor = refraction(normal, p0, pn);
+    vec3 refractionColor = refraction(normal, p0, pn, h0);
 
 
     // Super cheap shadow calculation

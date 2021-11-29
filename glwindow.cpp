@@ -21,7 +21,6 @@ GLWindow::GLWindow()
         u_time += u_dt;
         this->update();
         m_time = newTime;
-        //qDebug() << 1. / u_dt;
     });
 }
 
