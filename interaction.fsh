@@ -6,7 +6,7 @@ in vec2 vTexCoords;
 uniform float uTime;
 uniform vec2 uResolution;
 uniform sampler2D texture;
-uniform vec3 uTexelSize;
+uniform vec2 uTexelSize;
 uniform vec4 uSphere; // x (range 0-1), y (range 0-1), r (range 0-1), strength (range -Inf +Inf)
 
 void main(void)

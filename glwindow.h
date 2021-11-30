@@ -12,6 +12,7 @@ class QOpenGLShaderProgram;
 class QOpenGLBuffer;
 class QOpenGLVertexArrayObject;
 class QMouseEvent;
+class QWheelEvent;
 
 class GLWindow : public QOpenGLWindow
 {
@@ -48,18 +49,24 @@ private:
 
     float u_time = 0.0f;
     float u_dt = 0.0f;
+    float u_k = 0.8f;
+    float u_damping = 0.98f;
+    float u_normalStrength = 0.5f;
+    float u_lightStrength = 25.0f;
 
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+    void wheelEvent(QWheelEvent *event);
 
     QSize m_simSize = QSize(128, 128);
+
 
     bool m_pressed;
     QPointF m_lastPoint;
 
     void setUniforms(QOpenGLShaderProgram *program);
-
+    void setTextureFilter(QOpenGLFunctions *f);
 };
 
 #endif // GLWINDOW_H

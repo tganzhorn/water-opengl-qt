@@ -1,6 +1,7 @@
 #include "glwindow.h"
 
 #include <QMouseEvent>
+#include <QWheelEvent>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
@@ -109,7 +110,20 @@ void GLWindow::setUniforms(QOpenGLShaderProgram *program)
     program->setUniformValue("uDt", u_dt);
     program->setUniformValue("uTime", u_time);
     program->setUniformValue("uResolution", width(), height());
-    program->setUniformValue("uTexelSize", 1.0f / m_simSize.width(), 1.0f / m_simSize.height(), 0.0f);
+    program->setUniformValue("uTexelSize", 1.0f / m_simSize.width(), 1.0f / m_simSize.height());
+    program->setUniformValue("uNormalTexelSize", 1.0f / m_simSize.width(), 1.0f / m_simSize.height());
+    program->setUniformValue("uK", u_k);
+    program->setUniformValue("uDamping", u_damping);
+    program->setUniformValue("uNormalStrength", u_normalStrength);
+    program->setUniformValue("uLightStrength", u_lightStrength);
+}
+
+void GLWindow::setTextureFilter(QOpenGLFunctions *f)
+{
+    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
 
 void GLWindow::paintGL()
@@ -125,7 +139,10 @@ void GLWindow::paintGL()
     m_simulationProgram->bind();
     m_vao->bind();
 
+    f->glActiveTexture(GL_TEXTURE0);
     f->glBindTexture(QOpenGLTexture::Target2D, m_fboSimulation->texture());
+    setTextureFilter(f);
+    f->glUniform1i(f->glGetUniformLocation(m_renderProgram->programId(), "texture"), 0);
 
     setUniforms(m_simulationProgram);
 
@@ -139,7 +156,10 @@ void GLWindow::paintGL()
     f->glViewport(0, 0, width(), height());
     m_normalsProgram->bind();
 
+    f->glActiveTexture(GL_TEXTURE0);
     f->glBindTexture(QOpenGLTexture::Target2D, m_fboSimulation->texture());
+    setTextureFilter(f);
+    f->glUniform1i(f->glGetUniformLocation(m_renderProgram->programId(), "texture"), 0);
 
     setUniforms(m_normalsProgram);
 
@@ -154,27 +174,23 @@ void GLWindow::paintGL()
     m_renderProgram->bind();
 
     f->glActiveTexture(GL_TEXTURE0);
-    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     f->glBindTexture(GL_TEXTURE_2D, m_fboSimulation->texture());
+    setTextureFilter(f);
     f->glUniform1i(f->glGetUniformLocation(m_renderProgram->programId(), "simulationTexture"), 0);
 
     f->glActiveTexture(GL_TEXTURE1);
-    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     f->glBindTexture(GL_TEXTURE_2D, m_textureBaseColor->textureId());
+    setTextureFilter(f);
     f->glUniform1i(f->glGetUniformLocation(m_renderProgram->programId(), "albedoTexture"), 1);
 
     f->glActiveTexture(GL_TEXTURE2);
-    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     f->glBindTexture(GL_TEXTURE_2D, m_textureEnvironmentMap->textureId());
+    setTextureFilter(f);
     f->glUniform1i(f->glGetUniformLocation(m_renderProgram->programId(), "environmentTexture"), 2);
 
     f->glActiveTexture(GL_TEXTURE3);
-    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     f->glBindTexture(GL_TEXTURE_2D, m_fboNormals->texture());
+    setTextureFilter(f);
     f->glUniform1i(f->glGetUniformLocation(m_renderProgram->programId(), "normalsTexture"), 3);
 
     setUniforms(m_renderProgram);
@@ -214,28 +230,11 @@ void GLWindow::mouseMoveEvent(QMouseEvent *event)
 
     f->glBindTexture(QOpenGLTexture::Target2D, m_fboSimulation->texture());
 
-    m_interactionProgram->setUniformValue("uSphere", event->position().x() / width(), 1. - event->position().y() / height(), 0.01, -0.1);
+    m_interactionProgram->setUniformValue("uSphere", event->position().x() / width(), 1. - event->position().y() / height(), 0.02, -0.1);
     m_fboSimulation->bind();
     f->glDrawArrays(GL_TRIANGLES, 0, sizeof(m_quad) / 3.0f);
     m_fboSimulation->release();
     m_vao->release();
-
-    //m_interactionProgram->release();
-
-    /*m_fbo->bind();
-    QPoint p = QPoint(0.0, height() - m_simSize.height());
-
-    painter.begin(m_openGlPaintDevice);
-    painter.setRenderHints(QPainter::Antialiasing);
-    painter.setPen(QPen(QColor(0, 255, 0, 255), 5));
-    painter.setBrush(QColor(0, 255, 0, 255));
-
-    painter.drawEllipse(event->position() * (m_simSize.height() / (float)height()) + p, 5, 5);
-    painter.end();
-
-    m_lastPoint = event->position();
-
-    m_fbo->release();*/
 }
 
 void GLWindow::mousePressEvent(QMouseEvent *event)
@@ -264,4 +263,15 @@ void GLWindow::mousePressEvent(QMouseEvent *event)
 void GLWindow::mouseReleaseEvent(QMouseEvent *)
 {
     m_pressed = false;
+}
+
+void GLWindow::wheelEvent(QWheelEvent *event)
+{
+    if (event->angleDelta().y() > 0)
+    {
+        u_lightStrength++;
+    } else {
+        u_lightStrength--;
+    }
+    qDebug() << u_lightStrength;
 }
