@@ -9,7 +9,23 @@ layout (location = 0) uniform sampler2D simulationTexture;
 layout (location = 1) uniform sampler2D albedoTexture;
 layout (location = 2) uniform sampler2D environmentTexture;
 layout (location = 3) uniform sampler2D normalsTexture;
+layout (location = 4) uniform sampler2D causticsTexture;
 uniform float uLightStrength;
+uniform vec3 uLightPosition;
+uniform vec3 uPlanePosition;
+uniform vec3 uPlaneNormal;
+uniform vec3 uCameraPosition;
+uniform vec2 uRenderTexelSize;
+
+vec3 calculateSmoothNormal()
+{
+    vec3 smoothNormal = texture2D(normalsTexture, vUV).xyz;
+    smoothNormal += texture2D(normalsTexture, vUV + vec2(uRenderTexelSize.x, uRenderTexelSize.y)).xyz;
+    smoothNormal += texture2D(normalsTexture, vUV + vec2(uRenderTexelSize.x, -uRenderTexelSize.y)).xyz;
+    smoothNormal += texture2D(normalsTexture, vUV + vec2(-uRenderTexelSize.x, uRenderTexelSize.y)).xyz;
+    smoothNormal += texture2D(normalsTexture, vUV + vec2(-uRenderTexelSize.x, -uRenderTexelSize.y)).xyz;
+    return smoothNormal / 5.0;
+}
 
 float calculateAttenuation(in vec3 fragPos, in vec3 lightPos)
 {
@@ -59,7 +75,6 @@ vec3 refraction(in vec3 V, in vec3 normal, in vec3 p0, in vec3 pn, in float h0)
     // RED light
     vec3 r0 = vec3(vUV, h0); // Ray origin
     vec3 rd = refract(normal, V, 0.5);
-
     float t = -dot(r0 - p0, pn) / dot(rd, pn);
     vec2 rrUV = (r0 + rd * t).xy;
 
@@ -82,19 +97,19 @@ vec3 refraction(in vec3 V, in vec3 normal, in vec3 p0, in vec3 pn, in float h0)
 
 void main(void)
 {       
-    vec3 cameraPos = vec3(0.5, 0.5, 8);
+    vec3 cameraPos = uCameraPosition;
     vec3 imagePlane = vec3(vUV, 0);
     vec3 lightColor = vec3(1, 1, 1);
-    vec3 lightPos = vec3(0.5, 0.5, 3);
+    vec3 lightPos = uLightPosition;
     float lightStrength = uLightStrength;
     vec3 wi = normalize(lightPos - imagePlane);
 
-    vec3 N = texture2D(normalsTexture, vUV).xyz; // Normal
+    vec3 N = calculateSmoothNormal(); // Normal
     vec3 V = normalize(imagePlane - cameraPos); // View vector
 
     float cosTheta = max(dot(N, wi), 0.0);
     float attenuation = calculateAttenuation(imagePlane, lightPos) * lightStrength;
-    vec3 radiance = lightColor * attenuation;
+    vec3 radiance = lightColor * attenuation + texture2D(causticsTexture, vUV).rgb * 2;
 
     vec3 F0 = vec3(0.02); // F0 value for water
 
@@ -116,8 +131,8 @@ void main(void)
 
     // Refraction
     float h0 = N.z * 0.25;
-    vec3 p0 = vec3(0, 0, -0.1f);
-    vec3 pn = vec3(0, 0, 1);
+    vec3 p0 = uPlanePosition;
+    vec3 pn = uPlaneNormal;
 
     vec3 refractionColor = refraction(V, N, p0, pn, h0);
 
@@ -136,7 +151,5 @@ void main(void)
     //color = pow(color, vec3(1.0 / 2.2));
 
     FragColor = vec4(color, 1);
-    //FragColor = vec4(vec3(causticTermR, causticTermG, causticTermB), 1);
-    //FragColor = texture2D(simulationTexture, vUV);
-    //FragColor = vec4(N, 1);
+    //FragColor = vec4(texture2D(causticsTexture, vUV).rgb, 1);
 }

@@ -35,9 +35,11 @@ GLWindow::~GLWindow()
     delete m_vao;
     delete m_fboSimulation;
     delete m_fboNormals;
+    delete m_fboCaustics;
     delete m_textureBaseColor;
     delete m_textureEnvironmentMap;
     delete m_normalsProgram;
+    delete m_causticsProgram;
 }
 
 void GLWindow::initializeGL()
@@ -66,6 +68,11 @@ void GLWindow::initializeGL()
     m_normalsProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":shaders/normals.fsh");
     m_normalsProgram->link();
 
+    m_causticsProgram = new QOpenGLShaderProgram;
+    m_causticsProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":shaders/vert.vsh");
+    m_causticsProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":shaders/caustics.fsh");
+    m_causticsProgram->link();
+
     m_vao = new QOpenGLVertexArrayObject;
     if (m_vao->create())
         m_vao->bind();
@@ -83,8 +90,14 @@ void GLWindow::initializeGL()
 
     QOpenGLFramebufferObjectFormat formatNormals = QOpenGLFramebufferObjectFormat();
     formatNormals.setInternalTextureFormat(QOpenGLTexture::RGB16F);
+    formatNormals.setTextureTarget(GL_TEXTURE_2D);
     m_fboNormals = new QOpenGLFramebufferObject(width(), height(), formatNormals);
     m_fboNormals->bind();
+
+    QOpenGLFramebufferObjectFormat formatCaustics = QOpenGLFramebufferObjectFormat();
+    formatCaustics.setInternalTextureFormat(QOpenGLTexture::RGB32F);
+    m_fboCaustics = new QOpenGLFramebufferObject(width(), height(), formatCaustics);
+    m_fboCaustics->bind();
 
     m_textureBaseColor = new QOpenGLTexture(QImage(":/textures/QT.png"));
     m_textureBaseColor->create();
@@ -110,12 +123,16 @@ void GLWindow::setUniforms(QOpenGLShaderProgram *program)
     program->setUniformValue("uDt", u_dt);
     program->setUniformValue("uTime", u_time);
     program->setUniformValue("uResolution", width(), height());
-    program->setUniformValue("uTexelSize", 1.0f / m_simSize.width(), 1.0f / m_simSize.height());
-    program->setUniformValue("uNormalTexelSize", 1.0f / m_simSize.width(), 1.0f / m_simSize.height());
+    program->setUniformValue("uSimTexelSize", 1.0f / m_simSize.width(), 1.0f / m_simSize.height());
+    program->setUniformValue("uRenderTexelSize", 1.0f / width(), 1.0f / height());
     program->setUniformValue("uK", u_k);
     program->setUniformValue("uDamping", u_damping);
     program->setUniformValue("uNormalStrength", u_normalStrength);
     program->setUniformValue("uLightStrength", u_lightStrength);
+    program->setUniformValue("uLightPosition", u_lightPosition);
+    program->setUniformValue("uPlanePosition", u_planePosition);
+    program->setUniformValue("uPlaneNormal", u_planeNormal);
+    program->setUniformValue("uCameraPosition", u_cameraPosition);
 }
 
 void GLWindow::setTextureFilter(QOpenGLFunctions *f)
@@ -142,7 +159,7 @@ void GLWindow::paintGL()
     f->glActiveTexture(GL_TEXTURE0);
     f->glBindTexture(QOpenGLTexture::Target2D, m_fboSimulation->texture());
     setTextureFilter(f);
-    f->glUniform1i(f->glGetUniformLocation(m_renderProgram->programId(), "texture"), 0);
+    f->glUniform1i(f->glGetUniformLocation(m_simulationProgram->programId(), "texture"), 0);
 
     setUniforms(m_simulationProgram);
 
@@ -159,7 +176,7 @@ void GLWindow::paintGL()
     f->glActiveTexture(GL_TEXTURE0);
     f->glBindTexture(QOpenGLTexture::Target2D, m_fboSimulation->texture());
     setTextureFilter(f);
-    f->glUniform1i(f->glGetUniformLocation(m_renderProgram->programId(), "texture"), 0);
+    f->glUniform1i(f->glGetUniformLocation(m_normalsProgram->programId(), "texture"), 0);
 
     setUniforms(m_normalsProgram);
 
@@ -168,6 +185,28 @@ void GLWindow::paintGL()
     m_fboNormals->release();
 
     m_normalsProgram->release();
+
+    // Caustics pass
+    f->glViewport(0, 0, width(), height());
+    m_causticsProgram->bind();
+
+    f->glActiveTexture(GL_TEXTURE0);
+    f->glBindTexture(QOpenGLTexture::Target2D, m_fboSimulation->texture());
+    setTextureFilter(f);
+    f->glUniform1i(f->glGetUniformLocation(m_causticsProgram->programId(), "simulationTexture"), 0);
+
+    f->glActiveTexture(GL_TEXTURE1);
+    f->glBindTexture(QOpenGLTexture::Target2D, m_fboNormals->texture());
+    setTextureFilter(f);
+    f->glUniform1i(f->glGetUniformLocation(m_causticsProgram->programId(), "normalsTexture"), 1);
+
+    setUniforms(m_causticsProgram);
+
+    m_fboCaustics->bind();
+    f->glDrawArrays(GL_TRIANGLES, 0, sizeof(m_quad) / 3.0f);
+    m_fboCaustics->release();
+
+    m_causticsProgram->release();
 
     // Render pass
     f->glViewport(0, 0, width(), height());
@@ -192,6 +231,11 @@ void GLWindow::paintGL()
     f->glBindTexture(GL_TEXTURE_2D, m_fboNormals->texture());
     setTextureFilter(f);
     f->glUniform1i(f->glGetUniformLocation(m_renderProgram->programId(), "normalsTexture"), 3);
+
+    f->glActiveTexture(GL_TEXTURE4);
+    f->glBindTexture(GL_TEXTURE_2D, m_fboCaustics->texture());
+    setTextureFilter(f);
+    f->glUniform1i(f->glGetUniformLocation(m_renderProgram->programId(), "causticsTexture"), 4);
 
     setUniforms(m_renderProgram);
 
@@ -263,15 +307,4 @@ void GLWindow::mousePressEvent(QMouseEvent *event)
 void GLWindow::mouseReleaseEvent(QMouseEvent *)
 {
     m_pressed = false;
-}
-
-void GLWindow::wheelEvent(QWheelEvent *event)
-{
-    if (event->angleDelta().y() > 0)
-    {
-        u_lightStrength++;
-    } else {
-        u_lightStrength--;
-    }
-    qDebug() << u_lightStrength;
 }
