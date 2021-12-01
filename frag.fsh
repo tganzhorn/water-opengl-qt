@@ -16,14 +16,15 @@ uniform vec3 uPlanePosition;
 uniform vec3 uPlaneNormal;
 uniform vec3 uCameraPosition;
 uniform vec2 uRenderTexelSize;
+uniform vec2 uSimTexelSize;
 
 vec3 calculateSmoothNormal()
 {
     vec3 smoothNormal = texture2D(normalsTexture, vUV).xyz;
-    smoothNormal += texture2D(normalsTexture, vUV + vec2(uRenderTexelSize.x, uRenderTexelSize.y)).xyz;
-    smoothNormal += texture2D(normalsTexture, vUV + vec2(uRenderTexelSize.x, -uRenderTexelSize.y)).xyz;
-    smoothNormal += texture2D(normalsTexture, vUV + vec2(-uRenderTexelSize.x, uRenderTexelSize.y)).xyz;
-    smoothNormal += texture2D(normalsTexture, vUV + vec2(-uRenderTexelSize.x, -uRenderTexelSize.y)).xyz;
+    smoothNormal += texture2D(normalsTexture, vUV + vec2(uSimTexelSize.x, uSimTexelSize.y)).xyz;
+    smoothNormal += texture2D(normalsTexture, vUV + vec2(uSimTexelSize.x, -uSimTexelSize.y)).xyz;
+    smoothNormal += texture2D(normalsTexture, vUV + vec2(-uSimTexelSize.x, uSimTexelSize.y)).xyz;
+    smoothNormal += texture2D(normalsTexture, vUV + vec2(-uSimTexelSize.x, -uSimTexelSize.y)).xyz;
     return smoothNormal / 5.0;
 }
 

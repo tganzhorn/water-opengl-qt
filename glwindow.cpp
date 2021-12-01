@@ -91,7 +91,7 @@ void GLWindow::initializeGL()
     QOpenGLFramebufferObjectFormat formatNormals = QOpenGLFramebufferObjectFormat();
     formatNormals.setInternalTextureFormat(QOpenGLTexture::RGB16F);
     formatNormals.setTextureTarget(GL_TEXTURE_2D);
-    m_fboNormals = new QOpenGLFramebufferObject(width(), height(), formatNormals);
+    m_fboNormals = new QOpenGLFramebufferObject(m_simSize.width(), m_simSize.height(), formatNormals);
     m_fboNormals->bind();
 
     QOpenGLFramebufferObjectFormat formatCaustics = QOpenGLFramebufferObjectFormat();
@@ -152,6 +152,7 @@ void GLWindow::paintGL()
     m_renderProgram->release();
 
     // Simulation pass
+    // Calculation happens at sim size
     f->glViewport(0, 0, m_simSize.width(), m_simSize.height());
     m_simulationProgram->bind();
     m_vao->bind();
@@ -170,7 +171,8 @@ void GLWindow::paintGL()
     m_simulationProgram->release();
 
     // Normals pass
-    f->glViewport(0, 0, width(), height());
+    // Calculation happens at sim size
+    f->glViewport(0, 0, m_simSize.width(), m_simSize.height());
     m_normalsProgram->bind();
 
     f->glActiveTexture(GL_TEXTURE0);
@@ -187,6 +189,7 @@ void GLWindow::paintGL()
     m_normalsProgram->release();
 
     // Caustics pass
+    // Calculation happens at render size
     f->glViewport(0, 0, width(), height());
     m_causticsProgram->bind();
 
@@ -209,6 +212,7 @@ void GLWindow::paintGL()
     m_causticsProgram->release();
 
     // Render pass
+    // Calculation happens at render size
     f->glViewport(0, 0, width(), height());
     m_renderProgram->bind();
 
