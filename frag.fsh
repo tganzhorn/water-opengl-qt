@@ -109,7 +109,7 @@ void main(void)
 
     float cosTheta = max(dot(N, wi), 0.0);
     float attenuation = calculateAttenuation(imagePlane, lightPos) * lightStrength;
-    vec3 radiance = lightColor * attenuation + texture2D(causticsTexture, vUV).rgb * 2;
+    vec3 radiance = lightColor * attenuation + texture2D(causticsTexture, vUV).rgb * 1;
 
     vec3 F0 = vec3(0.02); // F0 value for water
 
