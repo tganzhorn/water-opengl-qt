@@ -6,6 +6,7 @@
         <file>interaction.fsh</file>
         <file>normals.fsh</file>
         <file>caustics.fsh</file>
+        <file>demo.fsh</file>
     </qresource>
     <qresource prefix="/">
         <file>textures/QT.png</file>

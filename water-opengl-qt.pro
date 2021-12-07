@@ -24,6 +24,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 DISTFILES += \
     caustics.fsh \
+    demo.fsh \
     frag.fsh \
     interaction.fsh \
     normals.fsh \

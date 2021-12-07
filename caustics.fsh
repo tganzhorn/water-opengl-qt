@@ -27,23 +27,20 @@ void main(void)
     vec3 ld = normalize(uLightPosition - vec3(vUV, normal.b));
     vec3 r0 = vec3(vUV, normal.b);
 
-    vec3 rd = refract(normal, ld, 0.5);
-    float t = -dot(r0 - uPlanePosition, uPlaneNormal) / dot(rd, uPlaneNormal);
-    vec2 rrUV = (r0 + rd * t).xy;
+    vec3 rd = refract(normal, ld, 0.69);
+    float tr = -dot(r0 - uPlanePosition, uPlaneNormal) / dot(rd, uPlaneNormal);
+    vec2 rrUV = (r0 + rd * tr).xy;
     float dr = length(fwidth(rrUV - vUV) - uRenderTexelSize);
 
-    rd = refract(normal, ld, 0.55);
-    t = -dot(r0 - uPlanePosition, uPlaneNormal) / dot(rd, uPlaneNormal);
-    vec2 rgUV = (r0 + rd * t).xy;
+    rd = refract(normal, ld, 0.74);
+    float tg = -dot(r0 - uPlanePosition, uPlaneNormal) / dot(rd, uPlaneNormal);
+    vec2 rgUV = (r0 + rd * tg).xy;
     float dg = length(fwidth(rgUV - vUV));
 
-    rd = refract(normal, ld, 0.6);
-    t = -dot(r0 - uPlanePosition, uPlaneNormal) / dot(rd, uPlaneNormal);
-    vec2 rbUV = (r0 + rd * t).xy;
+    rd = refract(normal, ld, 0.79);
+    float tb = -dot(r0 - uPlanePosition, uPlaneNormal) / dot(rd, uPlaneNormal);
+    vec2 rbUV = (r0 + rd * tb).xy;
     float db = length(fwidth(rbUV - vUV));
 
-    FragColor = pow(
-        max(vec3(0), vec3(dr, dg, db) - uRenderTexelSize.x),
-        vec3(0.3)
-    );
+    FragColor = vec3(dr, dg, db);
 }

@@ -31,6 +31,7 @@ private:
     QOpenGLShaderProgram *m_interactionProgram = nullptr;
     QOpenGLShaderProgram *m_normalsProgram = nullptr;
     QOpenGLShaderProgram *m_causticsProgram = nullptr;
+    QOpenGLShaderProgram *m_demoProgram = nullptr;
     QOpenGLBuffer *m_vbo = nullptr;
     QOpenGLVertexArrayObject *m_vao = nullptr;
     QOpenGLFramebufferObject *m_fboSimulation = nullptr;
@@ -64,12 +65,20 @@ private:
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+    void keyPressEvent(QKeyEvent *event);
 
     QSize m_simSize = QSize(128, 128);
 
 
-    bool m_pressed;
+    bool m_pressed = false;
     QPointF m_lastPoint;
+    bool m_activateDemoMode = false;
+    int m_demoMode = Qt::Key_1;
+    enum m_demoModes {
+        NORMAL = Qt::Key_1,
+        SIMULATION = Qt::Key_2,
+        CAUSTICS = Qt::Key_3
+    };
 
     void setUniforms(QOpenGLShaderProgram *program);
     void setTextureFilter(QOpenGLFunctions *f);

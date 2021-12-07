@@ -18,6 +18,24 @@ uniform vec3 uCameraPosition;
 uniform vec2 uRenderTexelSize;
 uniform vec2 uSimTexelSize;
 
+vec3 aces(vec3 x) {
+  const float a = 2.51;
+  const float b = 0.03;
+  const float c = 2.43;
+  const float d = 0.59;
+  const float e = 0.14;
+  return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
+float aces(float x) {
+  const float a = 2.51;
+  const float b = 0.03;
+  const float c = 2.43;
+  const float d = 0.59;
+  const float e = 0.14;
+  return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
 vec3 calculateSmoothNormal()
 {
     vec3 smoothNormal = texture2D(normalsTexture, vUV).xyz;
@@ -75,17 +93,17 @@ vec3 refraction(in vec3 V, in vec3 normal, in vec3 p0, in vec3 pn, in float h0)
 {
     // RED light
     vec3 r0 = vec3(vUV, h0); // Ray origin
-    vec3 rd = refract(normal, V, 0.5);
+    vec3 rd = refract(normal, V, 0.69);
     float t = -dot(r0 - p0, pn) / dot(rd, pn);
     vec2 rrUV = (r0 + rd * t).xy;
 
     //GREEN light
-    rd = refract(normal, V, 0.55);
+    rd = refract(normal, V, 0.74);
     t = -dot(r0 - p0, pn) / dot(rd, pn);
     vec2 rgUV = (r0 + rd * t).xy;
 
     //BLUE light
-    rd = refract(normal, V, 0.6);
+    rd = refract(normal, V, 0.79);
     t = -dot(r0 - p0, pn) / dot(rd, pn);
     vec2 rbUV = (r0 + rd * t).xy;
 
@@ -102,15 +120,14 @@ void main(void)
     vec3 imagePlane = vec3(vUV, 0);
     vec3 lightColor = vec3(1, 1, 1);
     vec3 lightPos = uLightPosition;
-    float lightStrength = uLightStrength;
     vec3 wi = normalize(lightPos - imagePlane);
 
     vec3 N = calculateSmoothNormal(); // Normal
     vec3 V = normalize(imagePlane - cameraPos); // View vector
 
     float cosTheta = max(dot(N, wi), 0.0);
-    float attenuation = calculateAttenuation(imagePlane, lightPos) * lightStrength;
-    vec3 radiance = lightColor * attenuation + texture2D(causticsTexture, vUV).rgb * 1;
+    float attenuation = calculateAttenuation(imagePlane, lightPos) * uLightStrength;
+    vec3 radiance = lightColor * attenuation + texture2D(causticsTexture, vUV).rgb * uLightStrength;
 
     vec3 F0 = vec3(0.02); // F0 value for water
 
@@ -145,11 +162,8 @@ void main(void)
     // Sum colors
     float NdotL = max(dot(N, L), 0.0);
     vec3 Lo = (kD * albedo / PI + specular) * radiance * NdotL;
-    vec3 ambient = vec3(0.1) * albedo;
+    vec3 ambient = vec3(0.2) * albedo;
     vec3 color = Lo + ambient;
-
-    //color = color / (color + vec3(1.0));
-    //color = pow(color, vec3(1.0 / 2.2));
 
     FragColor = vec4(color, 1);
     //FragColor = vec4(texture2D(causticsTexture, vUV).rgb, 1);
