@@ -19,8 +19,16 @@ GLWindow::GLWindow()
     m_time = QDateTime::currentDateTime();
     connect(this, &QOpenGLWindow::frameSwapped, this, [this] {
         QDateTime newTime = QDateTime::currentDateTime();
-        u_dt = (newTime.toMSecsSinceEpoch() - m_time.toMSecsSinceEpoch()) * 0.001;
-        u_time += u_dt;
+        m_fpsArray[m_fpsIndex] = (newTime.toMSecsSinceEpoch() - m_time.toMSecsSinceEpoch()) * 0.001;
+        m_fpsIndex = (m_fpsIndex + 1) % (sizeof(m_fpsArray) / sizeof(float));
+        float dt = 0;
+        for (unsigned int i = 0; i < sizeof(m_fpsArray) / sizeof(float); i++)
+        {
+            dt += m_fpsArray[i];
+        }
+        dt /= sizeof(m_fpsArray) / sizeof(float);
+        u_time += dt;
+        u_dt = dt;
         this->update();
         m_time = newTime;
     });
@@ -271,12 +279,16 @@ void GLWindow::paintGL()
         {
         case NORMAL:
             f->glBindTexture(GL_TEXTURE_2D, m_fboNormals->texture());
+             m_demoProgram->setUniformValue("uNormalize", true);
             break;
         case SIMULATION:
             f->glBindTexture(GL_TEXTURE_2D, m_fboSimulation->texture());
+             m_demoProgram->setUniformValue("uNormalize", true);
             break;
         case CAUSTICS:
             f->glBindTexture(GL_TEXTURE_2D, m_fboCaustics->texture());
+             m_demoProgram->setUniformValue("uNormalize", false);
+             m_demoProgram->setUniformValue("uMultiplier", u_lightStrength);
             break;
         }
 
