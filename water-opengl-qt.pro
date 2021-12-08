@@ -23,6 +23,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
+    caustics.comp \
     caustics.fsh \
     demo.fsh \
     frag.fsh \

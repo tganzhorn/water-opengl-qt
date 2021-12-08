@@ -6,7 +6,7 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLShader>
-#include <QOpenGLFunctions>
+#include <QOpenGLExtraFunctions>
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLFramebufferObjectFormat>
 #include <QOpenGLTexture>
@@ -41,6 +41,7 @@ GLWindow::~GLWindow()
     delete m_textureEnvironmentMap;
     delete m_normalsProgram;
     delete m_causticsProgram;
+    delete m_causticsComputeProgram;
     delete m_demoProgram;
 }
 
@@ -77,6 +78,10 @@ void GLWindow::initializeGL()
     m_causticsProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":shaders/vert.vsh");
     m_causticsProgram->addShaderFromSourceFile(QOpenGLShader::Fragment, ":shaders/caustics.fsh");
     m_causticsProgram->link();
+
+    m_causticsComputeProgram = new QOpenGLShaderProgram;
+    m_causticsComputeProgram->addShaderFromSourceFile(QOpenGLShader::Compute, ":shaders/caustics.comp");
+    m_causticsComputeProgram->link();
 
     m_demoProgram = new QOpenGLShaderProgram;
     m_demoProgram->addShaderFromSourceFile(QOpenGLShader::Vertex, ":shaders/vert.vsh");
@@ -159,12 +164,13 @@ void GLWindow::setTextureFilter(QOpenGLFunctions *f)
 void GLWindow::paintGL()
 {
     // Initialization and cleanup
-    QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
+    QOpenGLExtraFunctions *f = QOpenGLContext::currentContext()->extraFunctions();
     f->glClearColor(0, 0, 0, 1);
     f->glClear(GL_COLOR_BUFFER_BIT);
 
     // Simulation pass
     // Calculation happens at sim size
+
     f->glViewport(0, 0, m_simSize.width(), m_simSize.height());
     m_simulationProgram->bind();
     m_vao->bind();
@@ -172,6 +178,7 @@ void GLWindow::paintGL()
     f->glActiveTexture(GL_TEXTURE0);
     f->glBindTexture(QOpenGLTexture::Target2D, m_fboSimulation->texture());
     setTextureFilter(f);
+    m_simulationProgram->setUniformValue("uSimulationFreeze", m_activateSimulationFreeze);
     f->glUniform1i(f->glGetUniformLocation(m_simulationProgram->programId(), "texture"), 0);
 
     setUniforms(m_simulationProgram);
@@ -199,6 +206,10 @@ void GLWindow::paintGL()
     m_fboNormals->release();
 
     m_normalsProgram->release();
+
+    m_causticsComputeProgram->bind();
+    f->glDispatchCompute(1, 1, 1);
+    m_causticsComputeProgram->release();
 
     // Caustics pass
     // Calculation happens at render size
@@ -319,7 +330,7 @@ void GLWindow::paintGL()
         }
 
         painter.drawText(QRectF(0, height() - 30, 150, 30), text);
-                painter.end();
+        painter.end();
     }
 
     // Draw FPS Counter
@@ -343,6 +354,9 @@ void GLWindow::paintGL()
 
 void GLWindow::mouseMoveEvent(QMouseEvent *event)
 {
+    u_lightPosition.setX(event->position().x() / width());
+    u_lightPosition.setY(event->position().y() / height());
+
     if (!m_pressed) return;
     QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
@@ -369,9 +383,6 @@ void GLWindow::mousePressEvent(QMouseEvent *event)
 
     QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
 
-    f->glClearColor(0, 0, 0, 1);
-    f->glClear(GL_COLOR_BUFFER_BIT);
-
     f->glViewport(0, 0, m_simSize.width(), m_simSize.height());
     m_interactionProgram->bind();
     m_vao->bind();
@@ -396,6 +407,10 @@ void GLWindow::keyPressEvent(QKeyEvent *event)
     if (key == Qt::Key::Key_D)
     {
         m_activateDemoMode = !m_activateDemoMode;
+    }
+    if (key == Qt::Key_F)
+    {
+        m_activateSimulationFreeze = !m_activateSimulationFreeze;
     }
     if (m_activateDemoMode)
     {

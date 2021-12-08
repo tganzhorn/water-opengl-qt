@@ -31,6 +31,7 @@ private:
     QOpenGLShaderProgram *m_interactionProgram = nullptr;
     QOpenGLShaderProgram *m_normalsProgram = nullptr;
     QOpenGLShaderProgram *m_causticsProgram = nullptr;
+    QOpenGLShaderProgram *m_causticsComputeProgram = nullptr;
     QOpenGLShaderProgram *m_demoProgram = nullptr;
     QOpenGLBuffer *m_vbo = nullptr;
     QOpenGLVertexArrayObject *m_vao = nullptr;
@@ -73,6 +74,7 @@ private:
     bool m_pressed = false;
     QPointF m_lastPoint;
     bool m_activateDemoMode = false;
+    bool m_activateSimulationFreeze = false;
     int m_demoMode = Qt::Key_1;
     enum m_demoModes {
         NORMAL = Qt::Key_1,
