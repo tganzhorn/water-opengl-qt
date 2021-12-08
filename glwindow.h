@@ -42,6 +42,9 @@ private:
     QOpenGLTexture *m_textureEnvironmentMap = nullptr;
     QOpenGLPaintDevice *m_openGlPaintDevice = nullptr;
 
+    float m_fpsArray[64];
+    int m_fpsIndex = 0;
+
     float m_quad[18] = {
         -1.0f, 1.0f, 0.0f,
         1.0f, 1.0f, 0.0f,

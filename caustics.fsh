@@ -20,6 +20,14 @@ vec3 calculateSmoothNormal()
     return smoothNormal / 5.0;
 }
 
+float signedLength(in vec2 vec)
+{
+    float l = length(vec);
+    if (sign(vec.x) < 0 || sign(vec.y) < 0)
+        return l;
+    return -l;
+}
+
 void main(void)
 {
     // This shader is not even remotely accurate but it fakes caustics quite okay
@@ -30,17 +38,20 @@ void main(void)
     vec3 rd = refract(normal, ld, 0.69);
     float tr = -dot(r0 - uPlanePosition, uPlaneNormal) / dot(rd, uPlaneNormal);
     vec2 rrUV = (r0 + rd * tr).xy;
-    float dr = length(fwidth(rrUV - vUV) - uRenderTexelSize);
+    vec2 rp = rrUV - vUV;
+    float dr = signedLength(dFdx(rp) + dFdy(rp));
 
     rd = refract(normal, ld, 0.74);
     float tg = -dot(r0 - uPlanePosition, uPlaneNormal) / dot(rd, uPlaneNormal);
     vec2 rgUV = (r0 + rd * tg).xy;
-    float dg = length(fwidth(rgUV - vUV));
+    vec2 gp = rgUV - vUV;
+    float dg = signedLength(dFdx(gp) + dFdy(gp));
 
     rd = refract(normal, ld, 0.79);
     float tb = -dot(r0 - uPlanePosition, uPlaneNormal) / dot(rd, uPlaneNormal);
     vec2 rbUV = (r0 + rd * tb).xy;
-    float db = length(fwidth(rbUV - vUV));
+    vec2 bp = rbUV - vUV;
+    float db = signedLength(dFdx(bp) + dFdy(bp));
 
     FragColor = vec3(dr, dg, db);
 }
